@@ -212,6 +212,18 @@ class FixedPointValue implements Comparable<FixedPointValue> {
     return isNegative() ? -value : value;
   }
 
+  /// Converts a [FixedPointValue] to a [FloatingPointValue].
+  FloatingPointValue toFloat() {
+    // Qm.n need to conver so we have in some form (1.<MANTISSA>)
+    var isSigned = this.value.slice(-1, -1);
+    var fixedNum = isSigned == LogicValue.one ? ~this.value + 1 : this.value;
+
+    // TODO: FOR loop to find first one to figure out correct exponent value and width
+
+    return FloatingPointValue(
+        sign: isSigned, exponent: exponentVal, mantissa: mantissaVal);
+  }
+
   /// Addition operation that returns a FixedPointValue.
   /// The result is signed if one of the operands is signed.
   /// The result integer has the max integer width of the operands plus one.
