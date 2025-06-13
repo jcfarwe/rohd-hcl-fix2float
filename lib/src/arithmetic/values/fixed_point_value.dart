@@ -212,6 +212,59 @@ class FixedPointValue implements Comparable<FixedPointValue> {
     return isNegative() ? -value : value;
   }
 
+  /// Converts a [FixedPointValue] to a [FloatingPointValue].
+  FloatingPointValue toFloat() {
+    // Qm.n need to conver so we have in some form (1.<MANTISSA>)
+    final isSigned = this.value.slice(-1, -1);
+    final fixedNum = isSigned == LogicValue.one ? ~this.value + 1 : this.value;
+    var firstOneIndex = 0;
+    final LogicValue mantissaVal;
+    final LogicValue exponentVal;
+
+    if (!fixedNum.isValid) {
+      throw RohdHclException('Inputs must be valid.');
+    }
+    // if we have a zero value, we can return a zero floating point value
+    if (fixedNum.isZero) {
+      return FloatingPointValue(
+          sign: LogicValue.zero,
+          exponent: LogicValue.zero,
+          mantissa: LogicValue.zero);
+    }
+
+    // FOR loop to find first one to figure out correct exponent value and width
+    for (var i = fixedNum.width - 1; i > 0; i--) {
+      if (fixedNum[i] == LogicValue.one) {
+        firstOneIndex = i;
+        break;
+      }
+    }
+
+    // shift our mantissa to (1.<MANTISSA>) format
+    // need to add the +1 since we need to shift the FFO OUT of the mantissa
+    mantissaVal = fixedNum.slice(firstOneIndex - 1, 0);
+    // now we have (1.<MANTISSA>) so we can calculate the exponent
+    final radix = (fixedNum.width - 1) - m;
+    final shiftAmnt = firstOneIndex - radix;
+    // if shiftAmnt is positive, we shifted the exponent to the left
+    if (shiftAmnt > 0) {
+      exponentVal = LogicValue.ofInt(shiftAmnt, log2Ceil(shiftAmnt)) +
+          LogicValue.ofInt((log2Ceil(shiftAmnt) >> 1) - 1, log2Ceil(shiftAmnt));
+    } else if (shiftAmnt < 0) {
+      // if shiftAmnt is negative, we shifted the exponent to the right
+      exponentVal = LogicValue.ofInt(-shiftAmnt, log2Ceil(-shiftAmnt)) +
+          LogicValue.ofInt(
+              (log2Ceil(-shiftAmnt) >> 1) - 1, log2Ceil(-shiftAmnt));
+    } else {
+      // if shiftAmnt is zero, we have no shift
+      exponentVal =
+          LogicValue.ofInt((log2Ceil(shiftAmnt) >> 1) - 1, log2Ceil(shiftAmnt));
+    }
+
+    return FloatingPointValue(
+        sign: isSigned, exponent: exponentVal, mantissa: mantissaVal);
+  }
+
   /// Addition operation that returns a FixedPointValue.
   /// The result is signed if one of the operands is signed.
   /// The result integer has the max integer width of the operands plus one.
