@@ -278,7 +278,7 @@ void main() {
   test('FixedPointValue: toFloatingPointValue unsigned', () {
     const m = 10;
     const n = 12;
-    const width = m + n; // 1 for sign bit
+    const width = m + n; // no signe bit for unsigned
     for (var i = 0; i < pow(2, width); i++) {
       final fxv = FixedPointValue(
           value: LogicValue.ofInt(i, width), signed: false, m: m, n: n);
