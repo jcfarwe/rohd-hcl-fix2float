@@ -480,4 +480,19 @@ void main() {
     expect(fpv1.withinRounding(fpv1), true);
     expect(fpv1.withinRounding(fpv3), true);
   });
+  test('FPV: toFixedPointValue', () async {
+    final fpv1 = FloatingPoint32Value.populator().ofDouble(1);
+    final fxv = fpv1.toFixedPointValue(
+        7, 0, FloatingPointRoundingMode.roundTowardsZero);
+
+    expect(fxv.value == LogicValue.ofInt(1, 8), true);
+  });
+  test('FPV: oversize for FixedPoint', () async {
+    final fpv1 = FloatingPoint32Value.populator().ofDouble(256);
+
+    expect(
+        () => fpv1.toFixedPointValue(
+            7, 0, FloatingPointRoundingMode.roundTowardsZero),
+        throwsException);
+  });
 }

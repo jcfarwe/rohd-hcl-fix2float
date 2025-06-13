@@ -470,4 +470,20 @@ class FloatingPointValue implements Comparable<FloatingPointValue> {
           sign.bitString, exponent.bitString, '${'0' * (mantissa.width - 1)}1');
     }
   }
+
+  /// Convert this value to a FixedPointValue
+  FixedPointValue toFixedPointValue(
+      int m, int n, FloatingPointRoundingMode mode) {
+    // ensure FixedPointValue will be large enough to contain this value
+    // throw exception if not
+    final exp = exponent.toInt() - bias;
+    print("exp:$exp");
+
+    if (exp > m) {
+      throw RohdHclException('Value is too large for ordered size.');
+    }
+
+    return FixedPointValue(
+        value: LogicValue.ofInt(1, 8), signed: true, m: m, n: n);
+  }
 }
