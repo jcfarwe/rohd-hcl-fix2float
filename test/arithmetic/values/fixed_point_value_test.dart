@@ -261,4 +261,24 @@ void main() {
       }
     }
   });
+
+  test('FixedPointValue: toFloatingPointValue', () {
+    //const width = 8;
+    const m = 3;
+    const n = 4;
+    const value = '10111000';
+    // for (var i = 0; i < pow(2, width); i++) {
+    //   final fxv = FixedPointValue(
+    //       value: LogicValue.ofInt(i, width), signed: true, m: m, n: n);
+    //   final fpv = fxv.floatingPointValue;
+    //   expect(fpv.toDouble(), fxv.toDouble(),
+    //       reason: 'toFloatingPointValue failed for $i');
+    //   expect(fpv.exponent.width, 3);
+    //   expect(fpv.mantissa.width, 4);
+    final fxv = FixedPointValue(
+        value: LogicValue.ofString(value), signed: true, m: m, n: n);
+    final fpv = fxv.toFloat();
+    print('fpv: $fpv');
+    print('fxv: ${fxv.toDouble()}, fpv: ${fpv.toDouble()}');
+  });
 }
