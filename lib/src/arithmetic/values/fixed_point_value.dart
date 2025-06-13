@@ -216,9 +216,12 @@ class FixedPointValue implements Comparable<FixedPointValue> {
   FloatingPointValue toFloat() {
     // Qm.n need to conver so we have in some form (1.<MANTISSA>)
     const minmialExponentWidth = 4;
-    final isSigned = value[-1];
+    var isSigned = value[-1];
+    if (!signed) {
+      isSigned = LogicValue.zero; // if not signed, we set sign to zero
+    }
     // need to verify if we have a signed representation or not
-    final fixedNum = isSigned == LogicValue.one ? ~value + 1 : value;
+    final fixedNum = isSigned.toBool() ? ~value + 1 : value;
 
     var firstOneIndex = 0;
     final LogicValue mantissaVal;
@@ -252,11 +255,14 @@ class FixedPointValue implements Comparable<FixedPointValue> {
     }
     // now we have (1.<MANTISSA>) so we can calculate the exponent
     final radix = (fixedNum.width - 1) - m;
-    final shiftAmnt = firstOneIndex - radix;
+    var shiftAmnt = firstOneIndex - radix;
+    if (!signed) {
+      shiftAmnt -= 1; // shiftAmnt is reduced by one for unsigned
+    }
     var expWidth = 0;
     if (shiftAmnt != 0) {
       // if shiftAmnt is not zero, we need to calculate the exponent width
-      expWidth = log2Ceil(shiftAmnt.abs());
+      expWidth = log2Ceil(shiftAmnt.abs()) << 1;
     }
     if (expWidth < minmialExponentWidth) {
       expWidth = minmialExponentWidth; // minimum exponent width

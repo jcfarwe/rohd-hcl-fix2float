@@ -262,13 +262,26 @@ void main() {
     }
   });
 
-  test('FixedPointValue: toFloatingPointValue', () {
-    const m = 5;
-    const n = 6;
+  test('FixedPointValue: toFloatingPointValue signed', () {
+    const m = 10;
+    const n = 12;
     const width = m + n + 1; // 1 for sign bit
     for (var i = 0; i < pow(2, width); i++) {
       final fxv = FixedPointValue(
           value: LogicValue.ofInt(i, width), signed: true, m: m, n: n);
+      final fpv = fxv.toFloat();
+      expect(fpv.toDouble(), fxv.toDouble(),
+          reason: 'toFloatingPointValue failed for $i');
+    }
+  });
+
+  test('FixedPointValue: toFloatingPointValue unsigned', () {
+    const m = 10;
+    const n = 12;
+    const width = m + n; // 1 for sign bit
+    for (var i = 0; i < pow(2, width); i++) {
+      final fxv = FixedPointValue(
+          value: LogicValue.ofInt(i, width), signed: false, m: m, n: n);
       final fpv = fxv.toFloat();
       expect(fpv.toDouble(), fxv.toDouble(),
           reason: 'toFloatingPointValue failed for $i');
