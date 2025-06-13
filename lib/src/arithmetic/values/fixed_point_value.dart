@@ -216,13 +216,10 @@ class FixedPointValue implements Comparable<FixedPointValue> {
   FloatingPointValue toFloat() {
     // Qm.n need to conver so we have in some form (1.<MANTISSA>)
     const minmialExponentWidth = 4;
-    final isSigned = value[-1].toBool() && signed;
-    print('isSigned: $isSigned, value: ${value.bitString}');
+    final isSigned = value[-1];
     // need to verify if we have a signed representation or not
-    var fixedNum = value;
-    if (signed) {
-      fixedNum = isSigned ? ~value.slice(-2, 0) + 1 : value.slice(-2, 0);
-    }
+    final fixedNum = isSigned == LogicValue.one ? ~value + 1 : value;
+
     var firstOneIndex = 0;
     final LogicValue mantissaVal;
     final LogicValue exponentVal;
@@ -248,13 +245,19 @@ class FixedPointValue implements Comparable<FixedPointValue> {
 
     // shift our mantissa to (1.<MANTISSA>) format
     // need to add the +1 since we need to shift the FFO OUT of the mantissa
-    mantissaVal = fixedNum.slice(firstOneIndex - 1, 0);
+    if (firstOneIndex == 0) {
+      mantissaVal = LogicValue.filled(m + n, LogicValue.zero);
+    } else {
+      mantissaVal = fixedNum.slice(firstOneIndex - 1, 0);
+    }
     // now we have (1.<MANTISSA>) so we can calculate the exponent
     final radix = (fixedNum.width - 1) - m;
-    final shiftAmnt = firstOneIndex - radix - 1;
-    print('shiftAmnt: $shiftAmnt, firstOneIndex: $firstOneIndex, '
-        'radix: $radix, m: $m, width: ${fixedNum.width}');
-    var expWidth = log2Ceil(shiftAmnt.abs());
+    final shiftAmnt = firstOneIndex - radix;
+    var expWidth = 0;
+    if (shiftAmnt != 0) {
+      // if shiftAmnt is not zero, we need to calculate the exponent width
+      expWidth = log2Ceil(shiftAmnt.abs());
+    }
     if (expWidth < minmialExponentWidth) {
       expWidth = minmialExponentWidth; // minimum exponent width
     }
@@ -265,16 +268,14 @@ class FixedPointValue implements Comparable<FixedPointValue> {
       exponentVal = LogicValue.ofInt(shiftAmnt, expWidth) + bias;
     } else if (shiftAmnt < 0) {
       // if shiftAmnt is negative, we shifted the exponent to the right
-      exponentVal = LogicValue.ofInt(-shiftAmnt, expWidth) + bias;
+      exponentVal = LogicValue.ofInt(shiftAmnt, expWidth) + bias;
     } else {
       // if shiftAmnt is zero, we have no shift
       exponentVal = bias;
     }
 
     return FloatingPointValue(
-        sign: LogicValue.ofBool(isSigned),
-        exponent: exponentVal,
-        mantissa: mantissaVal);
+        sign: isSigned, exponent: exponentVal, mantissa: mantissaVal);
   }
 
   /// Addition operation that returns a FixedPointValue.
