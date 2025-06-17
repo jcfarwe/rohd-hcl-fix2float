@@ -214,6 +214,10 @@ class FixedPointValue implements Comparable<FixedPointValue> {
 
   /// Converts a [FixedPointValue] to a [FloatingPointValue].
   FloatingPointValue toFloat() {
+    if (!value.isValid) {
+      throw RohdHclException('Inputs must be valid.');
+    }
+
     // Qm.n need to conver so we have in some form (1.<MANTISSA>)
     const minmialExponentWidth = 4;
     var isSigned = value[-1];
