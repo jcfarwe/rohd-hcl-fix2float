@@ -268,18 +268,11 @@ class FixedPointValue implements Comparable<FixedPointValue> {
       expWidth = minmialExponentWidth; // minimum exponent width needed
     }
 
+    // set the bias amount which is 2^(expWidth - 1) - 1
     final bias =
         LogicValue.ofInt((pow(2, expWidth).toInt() >> 1) - 1, expWidth);
-    // if shiftAmnt is positive, we shifted the exponent to the left
-    if (shiftAmnt > 0) {
-      exponentVal = LogicValue.ofInt(shiftAmnt, expWidth) + bias;
-    } else if (shiftAmnt < 0) {
-      // if shiftAmnt is negative, we shifted the exponent to the right
-      exponentVal = LogicValue.ofInt(shiftAmnt, expWidth) + bias;
-    } else {
-      // if shiftAmnt is zero, we have no shift
-      exponentVal = bias;
-    }
+    // bias our exponent value
+    exponentVal = LogicValue.ofInt(shiftAmnt, expWidth) + bias;
 
     return FloatingPointValue(
         sign: sign, exponent: exponentVal, mantissa: mantissaVal);
