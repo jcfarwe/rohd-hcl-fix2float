@@ -9,6 +9,7 @@
 //  Max Korbel <max.korbel@intel.com>
 //  Desmond A Kirkpatrick <desmond.a.kirkpatrick@intel.com
 
+//import 'dart:core';
 import 'dart:math';
 import 'package:rohd/rohd.dart';
 import 'package:rohd_hcl/rohd_hcl.dart';
@@ -481,18 +482,52 @@ void main() {
     expect(fpv1.withinRounding(fpv3), true);
   });
   test('FPV: toFixedPointValue', () async {
-    final fpv1 = FloatingPoint32Value.populator().ofDouble(1);
-    final fxv = fpv1.toFixedPointValue(
-        7, 0, FloatingPointRoundingMode.roundTowardsZero);
+    //
+    // TODO(jcfarwe): Find all corner cases, automate test cases.
+    //[exp, expSize, sign (0 == +), mant, mantSize]
+    final testCases = [
+      [0, 8, 0, 0x000000, 23], // 1.0
+      [0, 8, 0, 0x000001, 23], // 1.0000001
+      [1, 8, 0, 0x000001, 23], // 2.0000002
+      [8, 8, 0, 0x000001, 23], // 256.00003
+      [0, 8, 0, 0x400000, 23], // 1.5
+      [-1, 8, 0, 0xC00000, 23], // 0.75
+      [1, 8, 0, 0x400000, 23], // 3.0
+      [2, 8, 0, 0x400000, 23], // 6.0
+      [0, 8, 1, 0x000000, 23], // -1.0
+      [0, 8, 1, 0x400000, 23], // -1.5
+      [0, 5, 0, 0x000, 10], // 1.0, 16-bit float
+    ];
 
-    expect(fxv.value == LogicValue.ofInt(1, 8), true);
+    for (final testCase in testCases) {
+      final bias = (pow(2, testCase[1] - 1) - 1).toInt();
+      final fpv1 = FloatingPointValue(
+          exponent: LogicValue.ofInt(testCase[0] + bias, testCase[1]),
+          sign: LogicValue.ofInt(testCase[2], 1),
+          mantissa: LogicValue.ofInt(testCase[3], testCase[4]));
+      final fxv = fpv1.toFixedPointValue();
+
+      final exp = testCase[0];
+      final expAbs = exp.abs();
+      final shift = expAbs + 2;
+
+      // automated expected result
+      final mantissa =
+          LogicValue.ofInt(1 << testCase[4] | testCase[3], testCase[4] + shift);
+      final shiftedMantissa = exp < 0 ? mantissa >> expAbs : mantissa << expAbs;
+      final finalMantissa =
+          testCase[2] == 0 ? shiftedMantissa : ~shiftedMantissa + 1;
+
+      final expected = FixedPointValue(
+          value: finalMantissa, signed: true, m: shift - 1, n: testCase[4]);
+      // end expected result
+
+      expect(fxv.value == expected.value, true);
+    }
   });
   test('FPV: oversize for FixedPoint', () async {
     final fpv1 = FloatingPoint32Value.populator().ofDouble(256);
 
-    expect(
-        () => fpv1.toFixedPointValue(
-            7, 0, FloatingPointRoundingMode.roundTowardsZero),
-        throwsException);
+    expect(() => fpv1.toFixedPointValue(), throwsException);
   });
 }

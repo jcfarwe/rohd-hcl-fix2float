@@ -471,8 +471,8 @@ class FloatingPointValue implements Comparable<FloatingPointValue> {
     }
   }
 
-  /// Convert this value to a FixedPointValue
-  FixedPointValue toFixedPointValue(
+  /// Convert this value to a FixedPointValue of specified size
+  /*FixedPointValue toFixedPointValue(
       int m, int n, FloatingPointRoundingMode mode) {
     // ensure FixedPointValue will be large enough to contain this value
     // throw exception if not
@@ -485,5 +485,34 @@ class FloatingPointValue implements Comparable<FloatingPointValue> {
 
     return FixedPointValue(
         value: LogicValue.ofInt(1, 8), signed: true, m: m, n: n);
+  }*/
+
+  /// Losslessly convert a [FloatingPointValue] to a [FixedPointValue].
+  /// TODO:
+  ///   Add ability to delete unneccessary LSB's from mantissa
+  ///   Add support for fixed m and n values, and rounding mode:
+  ///     FixedPointValue toFixedPointValue(int m, int n, FloatingPointRoundingMode mode){}
+  FixedPointValue toFixedPointValue() {
+    // space for full shift (bias + mantissa + sign)
+    final shift = exponent.toInt() - bias;
+
+    var fxdMantissa = [
+      if (isNormal()) LogicValue.one else LogicValue.zero,
+      mantissa
+    ].swizzle().zeroExtend(shift.abs() + mantissaWidth + 2);
+
+    fxdMantissa = sign == LogicValue.one
+        ? ~fxdMantissa + 1
+        : fxdMantissa; // make sure the sign is correct
+
+    // convert mantissa into 'value'
+    final shiftedFxdMantissa =
+        shift.isNegative ? fxdMantissa >> (shift * -1) : fxdMantissa << shift;
+
+    final fxpN = mantissaWidth;
+    final fxpM = shiftedFxdMantissa.width - fxpN - 1;
+
+    return FixedPointValue(
+        value: shiftedFxdMantissa, m: fxpM, n: fxpN, signed: true);
   }
 }
