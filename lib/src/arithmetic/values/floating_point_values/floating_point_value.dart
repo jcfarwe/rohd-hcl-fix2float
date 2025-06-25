@@ -471,27 +471,12 @@ class FloatingPointValue implements Comparable<FloatingPointValue> {
     }
   }
 
-  /// Convert this value to a FixedPointValue of specified size
-  /*FixedPointValue toFixedPointValue(
-      int m, int n, FloatingPointRoundingMode mode) {
-    // ensure FixedPointValue will be large enough to contain this value
-    // throw exception if not
-    final exp = exponent.toInt() - bias;
-    print("exp:$exp");
-
-    if (exp > m) {
-      throw RohdHclException('Value is too large for ordered size.');
-    }
-
-    return FixedPointValue(
-        value: LogicValue.ofInt(1, 8), signed: true, m: m, n: n);
-  }*/
-
   /// Losslessly convert a [FloatingPointValue] to a [FixedPointValue].
-  /// TODO:
+  /// TODO(jcfarwe):
   ///   Add ability to delete unneccessary LSB's from mantissa
   ///   Add support for fixed m and n values, and rounding mode:
-  ///     FixedPointValue toFixedPointValue(int m, int n, FloatingPointRoundingMode mode){}
+  ///     FixedPointValue toFixedPointValue(int m, int n,
+  ///         FloatingPointRoundingMode mode){}
   FixedPointValue toFixedPointValue() {
     // space for full shift (bias + mantissa + sign)
     final shift = exponent.toInt() - bias;

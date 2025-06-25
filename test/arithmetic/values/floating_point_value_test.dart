@@ -9,7 +9,6 @@
 //  Max Korbel <max.korbel@intel.com>
 //  Desmond A Kirkpatrick <desmond.a.kirkpatrick@intel.com
 
-//import 'dart:core';
 import 'dart:math';
 import 'package:rohd/rohd.dart';
 import 'package:rohd_hcl/rohd_hcl.dart';
@@ -524,10 +523,5 @@ void main() {
 
       expect(fxv.value == expected.value, true);
     }
-  });
-  test('FPV: oversize for FixedPoint', () async {
-    final fpv1 = FloatingPoint32Value.populator().ofDouble(256);
-
-    expect(() => fpv1.toFixedPointValue(), throwsException);
   });
 }
