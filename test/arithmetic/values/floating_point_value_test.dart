@@ -500,17 +500,17 @@ void main() {
 
     for (final testCase in testCases) {
       final bias = (pow(2, testCase[1] - 1) - 1).toInt();
+      final exp = testCase[0];
       final fpv1 = FloatingPointValue(
-          exponent: LogicValue.ofInt(testCase[0] + bias, testCase[1]),
+          exponent: LogicValue.ofInt(exp + bias, testCase[1]),
           sign: LogicValue.ofInt(testCase[2], 1),
           mantissa: LogicValue.ofInt(testCase[3], testCase[4]));
       final fxv = fpv1.toFixedPointValue();
 
-      final exp = testCase[0];
       final expAbs = exp.abs();
       final shift = expAbs + 2;
 
-      // automated expected result
+      // generate expected result
       final mantissa =
           LogicValue.ofInt(1 << testCase[4] | testCase[3], testCase[4] + shift);
       final shiftedMantissa = exp < 0 ? mantissa >> expAbs : mantissa << expAbs;
