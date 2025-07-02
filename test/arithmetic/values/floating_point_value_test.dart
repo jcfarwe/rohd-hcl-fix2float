@@ -490,12 +490,15 @@ void main() {
       [1, 8, 0, 0x000001, 23], // 2.0000002
       [8, 8, 0, 0x000001, 23], // 256.00003
       [0, 8, 0, 0x400000, 23], // 1.5
-      [-1, 8, 0, 0xC00000, 23], // 0.75
+      [-1, 8, 0, 0x400000, 23], // 0.75
       [1, 8, 0, 0x400000, 23], // 3.0
       [2, 8, 0, 0x400000, 23], // 6.0
       [0, 8, 1, 0x000000, 23], // -1.0
       [0, 8, 1, 0x400000, 23], // -1.5
       [0, 5, 0, 0x000, 10], // 1.0, 16-bit float
+      [-127, 8, 0, 0x000001, 23], // 1e-45
+      [-127, 8, 0, 0x000000, 23], // 0
+      [-127, 8, 1, 0x000000, 23], // -0
     ];
 
     for (final testCase in testCases) {
@@ -507,21 +510,48 @@ void main() {
           mantissa: LogicValue.ofInt(testCase[3], testCase[4]));
       final fxv = fpv1.toFixedPointValue();
 
-      final expAbs = exp.abs();
-      final shift = expAbs + 2;
-
       // generate expected result
-      final mantissa =
-          LogicValue.ofInt(1 << testCase[4] | testCase[3], testCase[4] + shift);
-      final shiftedMantissa = exp < 0 ? mantissa >> expAbs : mantissa << expAbs;
+      final expAbs = exp.abs();
+      final shift =
+          expAbs + 3; // add two bit for integral part, one bit for sign
+
+      final mantissa = fpv1.exponent != LogicValue.ofInt(0, testCase[1])
+          ? LogicValue.ofInt(
+              1 << testCase[4] | testCase[3], testCase[4] + shift)
+          : LogicValue.ofInt(testCase[3], testCase[4] + shift);
+      final shiftedMantissa = exp < 0 ? mantissa : mantissa << expAbs;
       final finalMantissa =
           testCase[2] == 0 ? shiftedMantissa : ~shiftedMantissa + 1;
 
-      final expected = FixedPointValue(
-          value: finalMantissa, signed: true, m: shift - 1, n: testCase[4]);
+      final nLen = exp.isNegative ? testCase[4] - exp : testCase[4];
+      final mLen = finalMantissa.width - nLen - 1; // one bit for sign
+      final expected =
+          FixedPointValue(value: finalMantissa, signed: true, m: mLen, n: nLen);
       // end expected result
 
-      expect(fxv.value == expected.value, true);
+      expect(fxv == expected, true);
+    }
+  });
+  test('FPV: toFixedPointValue, Special values', () async {
+    //
+    //[exp, expSize, sign (0 == +), mant, mantSize]
+    final testCases = [
+      [128, 8, 0, 0x400000, 23], // NaN -- how to handle?
+      [128, 8, 1, 0x000000, 23], // -Inf
+      [128, 8, 0, 0x400000, 23], // Inf
+    ];
+
+    for (final testCase in testCases) {
+      final bias = (pow(2, testCase[1] - 1) - 1).toInt();
+      final fpv1 = FloatingPointValue(
+          exponent: LogicValue.ofInt(testCase[0] + bias, testCase[1]),
+          sign: LogicValue.ofInt(testCase[2], 1),
+          mantissa: LogicValue.ofInt(testCase[3], testCase[4]));
+
+      expect(
+        () => fpv1.toFixedPointValue(),
+        throwsA(isA<RohdHclException>()),
+      );
     }
   });
 }

@@ -478,24 +478,33 @@ class FloatingPointValue implements Comparable<FloatingPointValue> {
   ///     FixedPointValue toFixedPointValue(int m, int n,
   ///         FloatingPointRoundingMode mode){}
   FixedPointValue toFixedPointValue() {
+    // check for 'special value'
+    if (isNaN) {
+      throw RohdHclException('FloatingPointValue: Not a Number');
+    }
+    if (isAnInfinity) {
+      throw RohdHclException('FloatingPointValue: Infinity');
+    }
     // space for full shift (bias + mantissa + sign)
     final shift = exponent.toInt() - bias;
 
     var fxdMantissa = [
       if (isNormal()) LogicValue.one else LogicValue.zero,
       mantissa
-    ].swizzle().zeroExtend(shift.abs() + mantissaWidth + 2);
+    ].swizzle().zeroExtend(shift.abs() +
+        mantissaWidth +
+        3); // two bits for integral part, one for sign
 
-    fxdMantissa = sign == LogicValue.one
-        ? ~fxdMantissa + 1
-        : fxdMantissa; // make sure the sign is correct
+    // convert to negative, if required
+    fxdMantissa = sign == LogicValue.one ? ~fxdMantissa + 1 : fxdMantissa;
 
     // convert mantissa into 'value'
     final shiftedFxdMantissa =
-        shift.isNegative ? fxdMantissa >> (shift * -1) : fxdMantissa << shift;
+        shift.isNegative ? fxdMantissa : fxdMantissa << shift;
 
-    final fxpN = mantissaWidth;
-    final fxpM = shiftedFxdMantissa.width - fxpN - 1;
+    final fxpN = shift.isNegative ? mantissaWidth - shift : mantissaWidth;
+    final fxpM =
+        shiftedFxdMantissa.width - fxpN - 1; // subtract one bit for sign
 
     return FixedPointValue(
         value: shiftedFxdMantissa, m: fxpM, n: fxpN, signed: true);
